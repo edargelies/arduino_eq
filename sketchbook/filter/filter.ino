@@ -1,7 +1,7 @@
-//Simple Audio In w output to 8 bit DAC
-//by Amanda Ghassaei
-//http://www.instructables.com/id/Arduino-Audio-Input/
-//Sept 2012
+//Simple Audio In w filter and output to 8 bit DAC
+//by Eric Dargelies
+//Credit: Amanda Ghassaei for Audio in and out to 8 bit DAC
+//November 2015
 
 /*
  * This program is free software; you can redistribute it and/or modify
@@ -11,8 +11,7 @@
  *
 */
 #include <Filters.h>
-int incomingAudio;
-float filterFrequency = 1000;
+int audioIn;
 
 void setup(){
   for (byte i=0;i<8;i++){
@@ -21,19 +20,18 @@ void setup(){
 }
 
 void loop(){
+  float frequency = analogRead(A1) * 8000/1023;
+  FilterOnePole lowpassFilter( LOWPASS, frequency );
   while( true ) {
-    //FilterOnePole lowpassFilter( LOWPASS, filterFrequency );
-    //lowpassFilter.input( analogRead(A0));
-    incomingAudio = analogRead(A0);//read voltage at A0
-    incomingAudio = (incomingAudio+1)/4 - 1;//scale from 10 bit (0-1023) to 8 bit (0-255)
-    if (incomingAudio<0){//deal with negative numbers
-      incomingAudio = 0;
+    lowpassFilter.input( A0 );
+    audioIn = analogRead(A0);//read voltage at A0
+    audioIn = (audioIn+1)/4 - 1;//scale from 10 bit (0-1023) to 8 bit (0-255)
+    if (audioIn<0){ //deal with negative numbers
+      audioIn = 0;
     }
-    PORTD = incomingAudio;
-    if (filterFrequency = 3000 ) {
-      filterFrequency = 1000;
-    }
-    filterFrequency++;
+    PORTD = audioIn;
+    frequency = analogRead(A1) * 8000/1023;
+    lowpassFilter( LOWPASS, frequency );
   }
 }
 
