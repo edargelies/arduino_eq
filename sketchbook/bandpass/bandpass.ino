@@ -35,7 +35,8 @@ void loop(){
     PORTD = incomingAudio;
     frequency = analogRead(A1) * 8000/1023;
     bandwidth = analogRead(A2) * 8000/1023;
-    lowpassFilter(LOWPASS, frequency);
+    FilterOnePole lowpassFilter(LOWPASS, (frequency + bandwidth/2));
+    FilterOnePole highpassFilter(HIGHPASS, (frequency - bandwidth/2));
   }
 }
 
