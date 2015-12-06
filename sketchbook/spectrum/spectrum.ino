@@ -32,6 +32,25 @@ void setup() {
   for (int i=0;i<8;i++){ // Prepare the digital out pins for audio output
     pinMode(i,OUTPUT);
   }
+
+  cli();//disable interrupts
+  //set timer0 interrupt at 40kHz
+  TCCR0A = 0;// set entire TCCR0A register to 0
+  TCCR0B = 0;// same for TCCR0B
+  TCNT0  = 0;//initialize counter value to 0
+  // set compare match register for 40khz increments
+  OCR0A = 255;// = (16*10^6) / (40000*8) - 1 (must be <256)
+  // turn on CTC mode
+  TCCR0A |= (1 << WGM01);
+  // Set CS11 bit for 8 prescaler
+  TCCR0B |= (1 << CS11); 
+  // enable timer compare interrupt
+  TIMSK0 |= (1 << OCIE0A);
+  sei();//enable interrupts
+}
+
+ISR(TIMER0_COMPA_vect){ //40kHz interrupt routine
+  PORTD = analogRead( A0 );
 }
 
 void loop() {
