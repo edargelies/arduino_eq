@@ -55,8 +55,9 @@ void loop() {
 void filterInput(){
   float frequency = analogRead(A1) * 8000/1023;
   FilterOnePole lowpassFilter( LOWPASS, frequency );
+  lowpassFilter.input( A0 );
   while( true ) {
-    lowpassFilter.input( A0 );
+    
     audioIn = analogRead(A0);//read voltage at A0
     audioIn = (audioIn+1)/4 - 1;//scale from 10 bit (0-1023) to 8 bit (0-255)
     if (audioIn<0){ //deal with negative numbers
