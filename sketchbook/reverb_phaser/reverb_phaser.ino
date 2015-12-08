@@ -1,7 +1,8 @@
 /* Arduino Audio Reverb
 
    Modifed 2015 Eric Dargelies
-   Removed LED writes, updated code to be reflective of hardware setup
+   Removed LED writes, updated code to be reflective of hardware setup. 
+   Added additional audio effects from other labs.
    on http://interface.khm.de/index.php/lab/interfaces-advanced/arduino-realtime-audio-processing/
 
    Arduino Realtime Audio Processing
@@ -29,7 +30,7 @@ volatile boolean f_sample;
 volatile byte byteADC0;
 volatile byte byteADC1;
 volatile byte byteADC2;
-volatile byte noop;
+//volatile byte noop;
 
 int buffIndex;
 int buffIndex2;
@@ -43,11 +44,18 @@ byte buffVal;
 
 byte delayBuff[512];  // Audio Memory Array 8-Bit
 
+enum effect {
+  reverb,
+  stutter, // delay, but delay is a keyword in Arduino
+  phaser
+};
+effect soundEffect;
 
 void setup()
 {
+  soundEffect = reverb;  // This is how you select an effect from the above enum
   Serial.begin(57600);        // connect to the serial port
-  Serial.println("Arduino Audio Reverb");
+  Serial.print("Arduino Audio ");Serial.println(soundEffect);
 
   // set adc prescaler  to 32 for 38kHz sampling frequency
   sbi(ADCSRA, ADPS0);
@@ -85,7 +93,7 @@ void setup()
 
 void loop()
 {
-  if (false) { //Reverb or delay
+  if ((soundEffect ==  reverb) || (soundEffect == stutter)) { //Reverb or delay/stutter
     while (!f_sample) {     // wait for Sample Value from ADC
     }                       // Cycle 15625 KHz = 64uSec
 
@@ -102,10 +110,10 @@ void loop()
     if (audioIn > 127) audioIn = 127;   // Audio limiter
 
     buffVal = 127 + audioIn;                // add offset
-    if (true) { // Reverb or Delay
+    if (soundEffect == reverb) { // reverb
       delayBuff[buffIndex] = originalAudio;                // store sample in audio buffer      
     }
-    else {
+    else {  // delay/stutter
       delayBuff[buffIndex] = buffVal;
     }
 
@@ -163,10 +171,11 @@ ISR(TIMER2_OVF_vect) {
       byteADC1 = ADCH;               // get ADC channel 1
       cbi(ADMUX, MUX0);              // set multiplexer to channel 0
     }
-    noop++;
-    noop--;
-    noop++;
-    noop--;    // short delay before start conversion
+    __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t"); //No operations to create a delay
+    // noop++;
+    // noop--;
+    // noop++;
+    // noop--;    // short delay before start conversion
     sbi(ADCSRA, ADSC);             // start next conversion
   }
 }
