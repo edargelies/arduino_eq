@@ -53,9 +53,9 @@ effect soundEffect;
 
 void setup()
 {
-  soundEffect = reverb;  // This is how you select an effect from the above enum
+  soundEffect = phaser;  // This is how you select an effect from the above enum
   Serial.begin(57600);        // connect to the serial port
-  Serial.print("Arduino Audio ");Serial.println(soundEffect);
+  Serial.print("Arduino Audio ");Serial.println(effectToString(soundEffect));
 
   // set adc prescaler  to 32 for 38kHz sampling frequency
   sbi(ADCSRA, ADPS0);
@@ -172,10 +172,22 @@ ISR(TIMER2_OVF_vect) {
       cbi(ADMUX, MUX0);              // set multiplexer to channel 0
     }
     __asm__("nop\n\t""nop\n\t""nop\n\t""nop\n\t"); //No operations to create a delay
-    // noop++;
-    // noop--;
-    // noop++;
-    // noop--;    // short delay before start conversion
     sbi(ADCSRA, ADSC);             // start next conversion
   }
 }
+
+String effectToString(effect type){
+  if(type == reverb){
+    return "Reverb";
+  }
+  else if (type == stutter) {
+    return "Delay";
+  }
+  else if (type == phaser){
+    return "Phaser";
+  }
+  else {
+    return "Undefined";
+  }
+}
+
