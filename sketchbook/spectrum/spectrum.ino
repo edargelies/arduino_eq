@@ -5,9 +5,9 @@
 #include <LedControl.h>
 #include <FHT.h>
 
-#define DIN 13 // The arduino Digital pin that provides the data for the LED matrix
-#define CS 12 // The digital pin that provides the chip select input for the LED matrix
-#define CLK 11 // The digital pin that provides the clock input for the LED matrix
+#define DIN 12 // The arduino Digital pin that provides the data for the LED matrix
+#define CS 11 // The digital pin that provides the chip select input for the LED matrix
+#define CLK 10 // The digital pin that provides the clock input for the LED matrix
 #define MAX_DB 12
 #define MIN_DB -4
 #define ROWS 8 // Number of rows of the LED matrix, left as a parameter in case more matrices are added
@@ -15,7 +15,6 @@
 int range, stepSize;
 int ledArr[8];
 int rowArr[8];
-String sampleSet;
 
 
 
@@ -26,31 +25,9 @@ void setup() {
   lc.setIntensity(0, 15);     // Set the brightness to maximum value
   lc.clearDisplay(0);         // and clear the display
 
-  Serial.begin(115200);
+  Serial.begin(57600);
   range = MAX_DB - MIN_DB;
   stepSize = range / 8;
-  for (int i=0;i<8;i++){ // Prepare the digital out pins for audio output
-    pinMode(i,OUTPUT);
-  }
-
-  cli();//disable interrupts
-  //set timer0 interrupt at 40kHz
-  TCCR0A = 0;// set entire TCCR0A register to 0
-  TCCR0B = 0;// same for TCCR0B
-  TCNT0  = 0;//initialize counter value to 0
-  // set compare match register for 40khz increments
-  OCR0A = 255;// = (16*10^6) / (40000*8) - 1 (must be <256)
-  // turn on CTC mode
-  TCCR0A |= (1 << WGM01);
-  // Set CS11 bit for 8 prescaler
-  TCCR0B |= (1 << CS11); 
-  // enable timer compare interrupt
-  TIMSK0 |= (1 << OCIE0A);
-  sei();//enable interrupts
-}
-
-ISR(TIMER0_COMPA_vect){ //40kHz interrupt routine
-  PORTD = analogRead( A0 );
 }
 
 void loop() {
@@ -61,10 +38,9 @@ void loop() {
 
 void sampleInput() {
   memset(fht_input, 0, sizeof(fht_input));
-  for (int i=0; i<FHT_N; i++) { //may be able to optimize here 0 at odd indices
-    int sample = analogRead( A0 );
-//    PORTD = sample;
-    fht_input[i] = sample; // put real data into bins
+  for (int i = 0; i < FHT_N; i++) { //may be able to optimize here 0 at odd indices
+    fht_input[i] = analogRead( A0 ); // put real data into bins
+//    Serial.print("Sample in value "); Serial.print(i); Serial.print(" : "); Serial.println(fht_input[i]);
   }
   fht_window(); // window the data for better frequency response
   fht_reorder(); // reorder the data before doing the fht
@@ -76,11 +52,9 @@ void populateLedMatrix() {
   memset(rowArr, 0, sizeof(rowArr));  // Zero-out the row array
   int colIndex = COLUMNS - 1;
   for (int i = 0; i < COLUMNS; i++) {
-    Serial.print("FHT octave");
-    Serial.println(fht_oct_out[i]);
-    ledArr[i] = calcColumnVal(fht_oct_out[colIndex]/10);
-    Serial.print("Led db");
-    Serial.println(ledArr[i]);
+    Serial.print("FHT octave: "); Serial.print(fht_oct_out[colIndex]); Serial.print(" for column "); Serial.println(colIndex);
+    ledArr[i] = calcColumnVal(fht_oct_out[colIndex] / range);
+    Serial.print("Led DB: "); Serial.print(ledArr[i]); Serial.print(" for led array "); Serial.println(i);
     for (int j = 0; j < ROWS; j++) {
       if (i == 0) {
         rowArr[j] = bitRead(ledArr[i], j);
@@ -88,6 +62,7 @@ void populateLedMatrix() {
       else {
         rowArr[j] = rowArr[j] + pwer(bitRead(ledArr[i], j) * 2, i);
       }
+//      Serial.print("Row array value: "); Serial.print(rowArr[j]); Serial.print(" for row "); Serial.println(j);
     }
     colIndex--; // This ordering is purely a correction for the orientation of the matrix
   }

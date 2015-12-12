@@ -1,7 +1,7 @@
 /* Arduino Audio Reverb
 
    Modifed 2015 Eric Dargelies
-   Removed LED writes, updated code to be reflective of hardware setup. 
+   Removed LED writes, updated code to be reflective of hardware setup.
    Added additional audio effects from other labs.
    on http://interface.khm.de/index.php/lab/interfaces-advanced/arduino-realtime-audio-processing/
 
@@ -19,7 +19,7 @@
 
 */
 
-
+#include <Filters.h>
 #define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
 #define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
 
@@ -34,6 +34,7 @@ volatile byte byteADC2;
 
 int buffIndex;
 int buffIndex2;
+float frequency;
 
 int audioIn; // The reading from analog pin 0
 int audioPhased;
@@ -53,9 +54,8 @@ effect soundEffect;
 
 void setup()
 {
-  soundEffect = reverb;  // This is how you select an effect from the above enum
   Serial.begin(57600);        // connect to the serial port
-  Serial.print("Arduino Audio ");Serial.println(effectToString(soundEffect));
+  Serial.print("Arduino Audio Filter");
 
   // set adc prescaler  to 32 for 38kHz sampling frequency
   sbi(ADCSRA, ADPS0);
@@ -89,65 +89,18 @@ void setup()
   sbi (TIMSK2, TOIE2);             // enable Timer2 Interrupt
 }
 
-
-
+void filter() {
+  frequency = byteADC1;
+  FilterOnePole filterOneLowpass( LOWPASS, 2000 );
+  while (true) {
+  //  filterOneLowpass.input( byteADC0 );
+    //    OCR2A = filterOneLowpass.output();          // Sample Value to PWM Output
+    OCR2A = byteADC0;
+  }
+}
 void loop()
 {
-  if ((soundEffect ==  reverb) || (soundEffect == stutter)) { //Reverb or delay/stutter
-    while (!f_sample) {     // wait for Sample Value from ADC
-    }                       // Cycle 15625 KHz = 64uSec
-
-    f_sample = false;
-
-    buffVal = delayBuff[buffIndex] ;              // read the delay buffer
-    effectIn = 127 - buffVal ;              // substract offset
-    effectIn = effectIn * byteADC1 / 255;     // scale delayed sample with potentiometer
-
-    originalAudio = byteADC0;
-    audioIn = 127 - originalAudio;          // substract offset from new sample
-    audioIn = audioIn + effectIn;                 // add delayed sample and new sample
-    if (audioIn < -127) audioIn = -127; // Audio limiter
-    if (audioIn > 127) audioIn = 127;   // Audio limiter
-
-    buffVal = 127 + audioIn;                // add offset
-    if (soundEffect == reverb) { // reverb
-      delayBuff[buffIndex] = originalAudio;                // store sample in audio buffer      
-    }
-    else {  // delay/stutter
-      delayBuff[buffIndex] = buffVal;
-    }
-
-    buffIndex++;
-    buffIndex = buffIndex & 511;         // limit bufferindex 0..511
-
-    OCR2A = buffVal;            // Sample Value to PWM Output
-  }
-  else { //Phaser
-    while (!f_sample) {     // wait for Sample Value from ADC
-    }                       // Cycle 15625 KHz = 64uSec
-    f_sample = false;
-
-    buffVal = byteADC0;
-    delayBuff[buffIndex] = buffVal;        // write to buffer
-    audioIn = delayBuff[buffIndex2];            // read the delay buffer
-
-    byteADC1 = byteADC1 / 20;        // limit poti value to 512
-    buffIndex++;
-
-    buffIndex2 = buffIndex - byteADC1;
-
-
-    buffIndex2 = buffIndex2 & 511;         // limit index 0..511
-    buffIndex = buffIndex & 511;         // limit index 0..511
-
-    audioPhased = audioIn + buffVal;
-    audioPhased = audioPhased / 2;
-
-    buffVal = audioPhased;
-
-    OCR2A = buffVal;          // Sample Value to PWM Output
-
-  }
+  filter();
 }
 
 //******************************************************************
@@ -176,14 +129,14 @@ ISR(TIMER2_OVF_vect) {
   }
 }
 
-String effectToString(effect type){
-  if(type == reverb){
+String effectToString(effect type) {
+  if (type == reverb) {
     return "Reverb";
   }
   else if (type == stutter) {
     return "Delay";
   }
-  else if (type == phaser){
+  else if (type == phaser) {
     return "Phaser";
   }
   else {

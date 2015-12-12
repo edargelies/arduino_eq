@@ -30,32 +30,22 @@ void setup() {
 
   Serial.begin(115200);
   range = MAX_DB - MIN_DB;
-  stepSize = range / 8;
-  //  populateLedMatrix();
-  //  drawLed();
+  stepSize = range / ROWS;
 }
 
 void loop() {
   sampleInput();
   populateLedMatrix();
   drawLed();
-//  sampleFix();
-
 }
 
 void populateLedMatrix() {
   memset(rowArr, 0, sizeof(rowArr));
   int colIndex = COLUMNS - 1;
   for (int i = 0; i < COLUMNS; i++) {
-    Serial.print("FHT octave");
-    Serial.println(fht_oct_out[i]);
+    Serial.print("FHT octave: ");Serial.print(fht_oct_out[colIndex]);Serial.print(" for column ");Serial.println(colIndex);
     ledArr[i] = calcColumnVal(fht_oct_out[colIndex]/10);
-    Serial.print("Led db");
-    Serial.println(ledArr[i]);
-
-//    ledArr[i] = calcColumnVal(random(-4,12));
-
-    //ledArr[i] = calcColumnVal(dBBin[colIndex]);
+    Serial.print("Led DB: ");Serial.print(ledArr[i]);Serial.print(" for led array ");Serial.println(i);
     for (int j = 0; j < ROWS; j++) {
       if (i == 0) {
         rowArr[j] = bitRead(ledArr[i], j);
@@ -63,6 +53,7 @@ void populateLedMatrix() {
       else {
         rowArr[j] = rowArr[j] + pwer(bitRead(ledArr[i], j) * 2, i);
       }
+      Serial.print("Row array value: ");Serial.print(rowArr[j]);Serial.print(" for row ");Serial.println(j);
     }
     colIndex--;
   }
@@ -98,37 +89,12 @@ void sampleInput() {
   for (int i=0; i<FHT_N; i++) {
     int sample = analogRead(5);
     fht_input[i] = sample; // put real data into bins
-//    Serial.println(sample);
+    Serial.print("Sample in value ");Serial.print(i);Serial.print(" : ");Serial.println(sample);
   }
   fht_window(); // window the data for better frequency response
   fht_reorder(); // reorder the data before doing the fht
   fht_run(); // process the data in the fht
   fht_mag_octave(); // take the output of the fht
-  
-//  Serial.print("<");
-//  Serial.print(FHT_N/2);
-//  Serial.print(":");
-//  for (int curBin = 0; curBin < 7; ++curBin)
-//  {
-//    if (curBin > 0){
-//      Serial.print(",");
-//    }
-//    Serial.print(fht_oct_out[curBin]/10);
-//  }
-//  Serial.println(">");
 }
-
-//void sampleFix() {
-//
-//  int newPos; 
-//  float fhtCount, tempY;
-//  for (int x=0; x < DSP_SZ; x++) {
-//    fhtCount = FHT_N/2;
-//    newPos = x * (fhtCount / DSP_SZ); // single channel half-display 15-LED wide
-//    tempY = fht_lin_out[newPos];
-//    dBBin[x] = ((tempY/256)*16); // single channel full 16 LED high
-//
-//  }  
-//}
 
 
