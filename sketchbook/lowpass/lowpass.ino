@@ -6,6 +6,8 @@
  * In my experiments the Arduino doesn't seem to be fast 
  * enough to complete the floating point operations required
  * for audio filter and output.
+ * 
+ * Credit to Amanda Ghassaei for the DAC code
 */
 #include <Filters.h>
 int incomingAudio;
