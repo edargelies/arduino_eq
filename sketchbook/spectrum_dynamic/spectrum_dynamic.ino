@@ -69,7 +69,7 @@ void populateLedMatrix() {
         rowArr[j] = bitRead(ledArr[i], j);
       }
       else {
-        rowArr[j] = rowArr[j] + pow(bitRead(ledArr[i], j) * 2, i);
+        rowArr[j] = rowArr[j] + pwer(bitRead(ledArr[i], j) * 2, i);
       }
       //      Serial.print("Row array value: "); Serial.print(rowArr[j]); Serial.print(" for row "); Serial.println(j);
     }
@@ -90,7 +90,7 @@ int calcColumnVal(int dB) {
     maxMag = dB; //dynamically size the array for the input
   }
   int val = ceil(dB * (ROWS - 1) / maxMag);
-  val = pow(2, val) - 1;
+  val = pwer(2, val) - 1;
   return val;
 }
 
